@@ -37,19 +37,32 @@ func main() {
 	printMatrix(initialMatrix)
 
 	initializePossibleValuesMatrix(initialMatrix)
+	iterations := 0
+	sudokuSolved := false
 	//while no new value is eliminated check for constraints
 	for eliminatePossibleValues() {
-		checkSinglePossibleValues()
+		iterations++
+		checkForSinglePossibleValues()
+		if sudokuSolved = isSudokuSolved(possibleValuesMatrix[0]); sudokuSolved {
+			break
+		}
 	}
 
 	//start backtracking
-	//ToBeDone
+	if !sudokuSolved {
+
+	}
 
 	solvedMatrix = possibleValuesMatrix[0]
-	fmt.Println("Final Sudoku")
+	sudokuStatus := "finished"
+	if sudokuSolved {
+		sudokuStatus = "solved"
+	}
+	fmt.Printf("\nSudoku %s with %d Iterations\n", sudokuStatus, iterations)
 	printMatrix(solvedMatrix)
 }
-func checkSinglePossibleValues() {
+
+func checkForSinglePossibleValues() {
 	for col := 0; col < 9; col++ {
 		for row := 0; row < 9; row++ {
 			eligibleValues := 0
@@ -87,6 +100,17 @@ func eliminatePossibleValues() (eliminated bool) {
 	}
 
 	return
+}
+
+func isSudokuSolved(matrix [9][9]int) bool {
+	for col := 0; col < 9; col++ {
+		for row := 0; row < 9; row++ {
+			if matrix[row][col] == 0 {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func loadMatrix(filename *string) error {
