@@ -42,36 +42,37 @@ func main() {
 	useBacktracking := true
 	allowPrintMemStats := false
 
+	if allowPrintMemStats {
+		go printMemStats()
+	}
+
 	initializePossibleValuesMatrix(initialMatrix)
 	iterations := 0
-	sudokuSolved := false
+	sudokuIsSolved := false
+	start := time.Now()
 	if useConstrantSatisfaction {
 		//while no new value is eliminated check for constraints
 		for eliminatePossibleValues() {
 			iterations++
 			checkForSinglePossibleValues()
-			if sudokuSolved = isSudokuSolved(possibleValuesMatrix[0]); sudokuSolved {
+			if sudokuIsSolved = isSudokuSolved(possibleValuesMatrix[0]); sudokuIsSolved {
 				break
 			}
 		}
 	}
 
 	//start backtracking
-	start := time.Now()
-	if !sudokuSolved && useBacktracking {
-		if allowPrintMemStats {
-			go printMemStats()
-		}
-		sudokuSolved = backtrack(&possibleValuesMatrix[0])
+	if !sudokuIsSolved && useBacktracking {
+		sudokuIsSolved = backtrack(&possibleValuesMatrix[0])
 	}
 	duration := time.Since(start)
 
 	solvedMatrix = possibleValuesMatrix[0]
-	sudokuStatus := "cannot be solved"
-	if sudokuSolved {
+	sudokuStatus := "not solved"
+	if sudokuIsSolved {
 		sudokuStatus = "solved"
 	}
-	fmt.Printf("\nSudoku %s with %d Iterations & %d backtracks within %d ms\n", sudokuStatus, iterations, totalBacktracks, duration.Milliseconds())
+	fmt.Printf("\nSudoku %s with %d Iterations & %d backtracks within %d ns\n", sudokuStatus, iterations, totalBacktracks, duration.Nanoseconds())
 	printMatrix(solvedMatrix)
 }
 
@@ -103,7 +104,7 @@ func backtrack(matrix *[9][9]int) bool {
 			if matrix[col][row] == 0 {
 				for val := 9; val >= 1; val-- {
 					matrix[col][row] = val
-					if isValidMatrix(matrix) {
+					if hasAcceptableValue(col, row, *matrix) {
 						if backtrack(matrix) {
 							return true
 						}
@@ -207,7 +208,7 @@ func loadMatrix(filename *string) error {
 func isValidMatrix(matrix *[9][9]int) bool {
 	for col := 0; col < 9; col++ {
 		for row := 0; row < 9; row++ {
-			if !isAcceptableValue(row, col, *matrix) {
+			if !hasAcceptableValue(row, col, *matrix) {
 				return false
 			}
 		}
@@ -215,7 +216,7 @@ func isValidMatrix(matrix *[9][9]int) bool {
 	return true
 }
 
-func isAcceptableValue(row int, col int, matrix [9][9]int) bool {
+func hasAcceptableValue(row int, col int, matrix [9][9]int) bool {
 	if matrix[row][col] == 0 {
 		return true
 	}
