@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var matrixFile = flag.String("matrix-file", "matrix.txt", "path to a custom matrix file")
@@ -24,7 +26,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	if !isValidMatrix(initialMatrix) {
+	if !isValidMatrix(&initialMatrix) {
 		fmt.Printf("Loaded matrix is invalid")
 		os.Exit(1)
 	}
@@ -36,30 +38,85 @@ func main() {
 	fmt.Println("Initial Sudoku")
 	printMatrix(initialMatrix)
 
+	useConstrantSatisfaction := false
+	useBacktracking := true
+	allowPrintMemStats := false
+
 	initializePossibleValuesMatrix(initialMatrix)
 	iterations := 0
 	sudokuSolved := false
-	//while no new value is eliminated check for constraints
-	for eliminatePossibleValues() {
-		iterations++
-		checkForSinglePossibleValues()
-		if sudokuSolved = isSudokuSolved(possibleValuesMatrix[0]); sudokuSolved {
-			break
+	if useConstrantSatisfaction {
+		//while no new value is eliminated check for constraints
+		for eliminatePossibleValues() {
+			iterations++
+			checkForSinglePossibleValues()
+			if sudokuSolved = isSudokuSolved(possibleValuesMatrix[0]); sudokuSolved {
+				break
+			}
 		}
 	}
 
 	//start backtracking
-	if !sudokuSolved {
-
+	start := time.Now()
+	if !sudokuSolved && useBacktracking {
+		if allowPrintMemStats {
+			go printMemStats()
+		}
+		sudokuSolved = backtrack(&possibleValuesMatrix[0])
 	}
+	duration := time.Since(start)
 
 	solvedMatrix = possibleValuesMatrix[0]
-	sudokuStatus := "finished"
+	sudokuStatus := "cannot be solved"
 	if sudokuSolved {
 		sudokuStatus = "solved"
 	}
-	fmt.Printf("\nSudoku %s with %d Iterations\n", sudokuStatus, iterations)
+	fmt.Printf("\nSudoku %s with %d Iterations & %d backtracks within %d ms\n", sudokuStatus, iterations, totalBacktracks, duration.Milliseconds())
 	printMatrix(solvedMatrix)
+}
+
+func printMemStats() {
+	for {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		fmt.Printf("Alloc = %v KiB", bToKb(m.Alloc))
+		fmt.Printf("\tTotalAlloc = %v KiB", bToKb(m.TotalAlloc))
+		fmt.Printf("\tSys = %v KiB", bToKb(m.Sys))
+		fmt.Printf("\tNumGC = %v\n", m.NumGC)
+		time.Sleep(time.Second)
+	}
+}
+
+func bToKb(b uint64) uint64 {
+	return b / 1024
+}
+
+var totalBacktracks int
+
+func backtrack(matrix *[9][9]int) bool {
+	totalBacktracks++
+	if !hasEmptyCell(matrix) {
+		return true
+	}
+	for col := 0; col < 9; col++ {
+		for row := 0; row < 9; row++ {
+			if matrix[col][row] == 0 {
+				for val := 9; val >= 1; val-- {
+					matrix[col][row] = val
+					if isValidMatrix(matrix) {
+						if backtrack(matrix) {
+							return true
+						}
+						matrix[col][row] = 0
+					} else {
+						matrix[col][row] = 0
+					}
+				}
+				return false
+			}
+		}
+	}
+	return false
 }
 
 func checkForSinglePossibleValues() {
@@ -88,7 +145,7 @@ func eliminatePossibleValues() (eliminated bool) {
 				for possibleVal := 1; possibleVal <= 9; possibleVal++ {
 					if possibleValuesMatrix[possibleVal][row][col] != 0 {
 						possibleValuesMatrix[0][row][col] = possibleVal
-						if !isValidMatrix(possibleValuesMatrix[0]) {
+						if !isValidMatrix(&possibleValuesMatrix[0]) {
 							eliminated = true
 							possibleValuesMatrix[possibleVal][row][col] = 0
 						}
@@ -147,10 +204,10 @@ func loadMatrix(filename *string) error {
 	return nil
 }
 
-func isValidMatrix(matrix [9][9]int) bool {
+func isValidMatrix(matrix *[9][9]int) bool {
 	for col := 0; col < 9; col++ {
 		for row := 0; row < 9; row++ {
-			if !isAcceptableValue(row, col, matrix) {
+			if !isAcceptableValue(row, col, *matrix) {
 				return false
 			}
 		}
@@ -218,7 +275,7 @@ func initializePossibleValuesMatrix(matrix [9][9]int) {
 	}
 }
 
-func hasEmptyCell(matrix [9][9]int) bool {
+func hasEmptyCell(matrix *[9][9]int) bool {
 	for col := 0; col < 9; col++ {
 		for row := 0; row < 9; row++ {
 			if matrix[row][col] == 0 {
