@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -38,7 +37,7 @@ func main() {
 	fmt.Println("Initial Sudoku")
 	printMatrix(initialMatrix)
 
-	useConstrantSatisfaction := false
+	useConstraintSatisfaction := false
 	useBacktracking := true
 	allowPrintMemStats := false
 
@@ -50,7 +49,7 @@ func main() {
 	iterations := 0
 	sudokuIsSolved := false
 	start := time.Now()
-	if useConstrantSatisfaction {
+	if useConstraintSatisfaction {
 		//while no new value is eliminated check for constraints
 		for eliminatePossibleValues() {
 			iterations++
@@ -72,7 +71,8 @@ func main() {
 	if sudokuIsSolved {
 		sudokuStatus = "solved"
 	}
-	fmt.Printf("\nSudoku %s with %d Iterations & %d backtracks within %d ns\n", sudokuStatus, iterations, totalBacktracks, duration.Nanoseconds())
+	fmt.Printf("\nSudoku %s with %d Iterations & %d backtracks within %d ms\n", sudokuStatus, iterations,
+		totalBacktracks, duration.Milliseconds())
 	printMatrix(solvedMatrix)
 }
 
@@ -172,13 +172,13 @@ func isSudokuSolved(matrix [9][9]int) bool {
 }
 
 func loadMatrix(filename *string) error {
-	filebuffer, err := ioutil.ReadFile(*filename)
+	fileBuffer, err := os.ReadFile(*filename)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	inputdata := string(filebuffer)
-	data := bufio.NewScanner(strings.NewReader(inputdata))
+	inputData := string(fileBuffer)
+	data := bufio.NewScanner(strings.NewReader(inputData))
 	data.Split(bufio.ScanRunes)
 
 	insRow, insCol := 0, 0
@@ -233,7 +233,7 @@ func hasAcceptableValue(row int, col int, matrix [9][9]int) bool {
 		}
 	}
 
-	// Neighbor search
+	// Neighbour search
 	rowNeighborMin, rowNeighborMax := getMinMaxNeighbor(row)
 	colNeighborMin, colNeighborMax := getMinMaxNeighbor(col)
 
