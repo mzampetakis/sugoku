@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-var matrixFile = flag.String("matrix-file", "matrix.txt", "path to a custom matrix file")
+var matrixFile = flag.String("matrix-file", "matrix.txt", "path to the custom matrix file")
+var allowPrintMemStats = flag.Bool("memory-dump", false, "print memory stats every ms")
 
 var initialMatrix [9][9]int
 var possibleValuesMatrix [10][9][9]int
@@ -39,9 +40,8 @@ func main() {
 
 	useConstraintSatisfaction := false
 	useBacktracking := true
-	allowPrintMemStats := false
 
-	if allowPrintMemStats {
+	if allowPrintMemStats != nil && *allowPrintMemStats {
 		go printMemStats()
 	}
 
@@ -84,7 +84,7 @@ func printMemStats() {
 		fmt.Printf("\tTotalAlloc = %v KiB", bToKb(m.TotalAlloc))
 		fmt.Printf("\tSys = %v KiB", bToKb(m.Sys))
 		fmt.Printf("\tNumGC = %v\n", m.NumGC)
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond)
 	}
 }
 

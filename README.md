@@ -12,3 +12,8 @@ Simply add your sudoku matrix in a file such as matrix.txt and then run:
 ```
 go run main.go -matrix-file matrix.txt 
 ```
+
+Optionally add set `memory-dump` to true to see the memory usage of the app while solving the sudoku:
+```
+go run main.go -matrix-file matrix.txt -memory-dump true
+```
